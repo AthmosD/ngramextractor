@@ -26,6 +26,7 @@ def slidewindow(iterable, size=1):
 #------------MAIN FUNCTION:------------
 samplefiles = os.listdir("sample")
 print(samplefiles)
+print("bye")
 
 
 
