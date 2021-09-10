@@ -24,25 +24,15 @@ def slidewindow(iterable, size=1):
         yield win
 
 
-def extract_ngrams(directory = "sample/", n_size = 1):
+def extract_ngrams(directory = "sample/", n_size = 1, ngrams_possiblevalues = 0):
     filecount = 0
-    
+    #Read every filename in directory:
     samplefiles = os.listdir(directory)
 
     for filename in samplefiles:
         #Read a file:
         target = directory + filename
         samplebinary = readfile(target)
-
-        #Possible values of a byte:
-        byte_possiblevalues = []
-        for i in range(0x00, 0x100):
-            byte_possiblevalues.append(i)
-        #print(byte_possiblevalues, file=open("byteoutput.txt", "w"))
-
-        #Possible values of an n-gram:
-        ngrams_possiblevalues = list(product(byte_possiblevalues, repeat=n_size))
-        #print(ngrams_possiblevalues, file=open("ngramoutput.txt", "w"))
 
         #Split into n byte sections:
         ngramslist = []
@@ -61,11 +51,29 @@ def extract_ngrams(directory = "sample/", n_size = 1):
 
         #Merge empty dictionary with counted dictionary
         ngram_dict.update(vector_ngram)
-        #print(ngram_dict)
-        print(filename, ngram_dict.values(), file = open("ngrams_vec.txt", "a"))
+        print(filename, ngram_dict.values(), file = open("ngrams_extracted.txt", "a"))
         filecount += 1
         print(filecount, "files done.")
 
+def generate_possible_ngramvalues(n_size = 1):
+    #Possible values of a byte:
+    byte_possiblevalues = []
+    for i in range(0x00, 0x100):
+        byte_possiblevalues.append(i)
+    #print(byte_possiblevalues, file=open("byteoutput.txt", "w"))
+
+    #Possible values of an n-gram:
+    ngrams_possiblevalues = list(product(byte_possiblevalues, repeat=n_size))
+    #print(ngrams_possiblevalues, file=open("ngramoutput.txt", "w"))
+    print("Possible ngrams:", len(ngrams_possiblevalues), "values generated")
+    return ngrams_possiblevalues
+
+
 #------------MAIN FUNCTION:------------
 
-extract_ngrams("malware_samples/malware_samples_mips/", 2)
+#Setting of n_size and target directory:
+n_size = 3
+target_directory = "sample/"
+
+#Extraction of ngrams, give target directory, size of n, generated possible ngram values:
+extract_ngrams(target_directory, n_size, generate_possible_ngramvalues(n_size))
