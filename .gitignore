@@ -19,6 +19,7 @@ byteoutput.txt
 ngramoutput.txt
 fileoutput.txt
 ngrams_vec.txt
+ngrams_extracted.txt
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
