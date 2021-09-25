@@ -61,7 +61,7 @@ def extract_ngrams(directory = "sample/", n_size = 1, ngrams_possiblevalues = 0)
     for val in ngramdictlist:
         ngram_base = ngram_empty
         ngram_base.update(val)
-        print(ngram_base)
+        print(list(ngram_base.values()), file=open("ngramsoutput.txt", "w"))
         print(len(ngram_base))
 
 
@@ -93,10 +93,10 @@ def extract_header(filename):
 #------------MAIN FUNCTION:------------
 
 #Setting of n_size and target directory:
-n_size = 1
+n_size = 6
 target_directory = "sample/"
  
 #Extraction of ngrams, give target directory, size of n, generated possible ngram values:
-extract_ngrams(target_directory, n_size, generate_possible_ngramvalues(n_size))
+extract_ngrams(target_directory, n_size, 0)
 
 
