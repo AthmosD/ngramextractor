@@ -24,27 +24,48 @@ def extract_ngrams(directory = "sample/", n_size = 1, ngrams_possiblevalues = 0)
     #Read every filename in directory:
     samplefiles = os.listdir(directory)
 
+    keyslist = []
+    ngramdictlist = []
+
     for filename in samplefiles:
         #Read a file:
         target = directory + filename
         samplebinary = readfile(target)
 
         #Split into n byte sections:
-        ngramslist = list(ngrams(samplebinary, n_size, pad_right = True))
+        ngramslist = list(ngrams(samplebinary, n_size, pad_right = True, right_pad_symbol = -1))
 
         #Count occurences of unique ngrams:
         vector_ngram = dict(Counter(ngramslist))
+        ngramdictlist.append(vector_ngram)
+        #print(vector_ngram)
 
-        #Generate empty dictionary with keys as all possible ngrams, values initialized to 0:
-        ngram_dict = {}
-        for i in range(len(ngrams_possiblevalues)):
-            ngram_dict[ngrams_possiblevalues[i]] = 0
-
-        #Merge empty dictionary with counted dictionary
-        ngram_dict.update(vector_ngram)
-        print(filename, ngram_dict.values(), file = open("ngrams_extracted.txt", "a"))
+        #Add new keys to a list:
+        for val in vector_ngram.keys():
+            if val not in keyslist:
+                keyslist.append(val)
         filecount += 1
-        print(filecount, "files done. Vector lenght:", len(ngram_dict))
+        print(filecount, "files done.")
+
+        
+    #Generate empty dictionary based on every occured ngram:
+    keyslist.sort()
+    ngram_empty = {}
+    for val in keyslist:
+        ngram_empty[val] = 0
+
+
+    #Update existing ngrams, put them into a final list
+
+    ngrams_final = []
+    for val in ngramdictlist:
+        ngram_base = ngram_empty
+        ngram_base.update(val)
+        print(ngram_base)
+        print(len(ngram_base))
+
+
+
 
 def generate_possible_ngramvalues(n_size = 1):
     #Possible values of a byte:
@@ -72,8 +93,8 @@ def extract_header(filename):
 #------------MAIN FUNCTION:------------
 
 #Setting of n_size and target directory:
-n_size = 2
-target_directory = "benign_samples/ubiquiti/"
+n_size = 1
+target_directory = "sample/"
  
 #Extraction of ngrams, give target directory, size of n, generated possible ngram values:
 extract_ngrams(target_directory, n_size, generate_possible_ngramvalues(n_size))
