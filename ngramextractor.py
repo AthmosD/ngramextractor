@@ -17,19 +17,30 @@ def readfile(fname):
         content = file.read()
     return content
 
-
-
-def extract_ngrams(directory = "sample/", n_size = 1, ngrams_possiblevalues = 0):
+def extract_ngrams(directory = "sample/", n_size = 1):
     filecount = 0
     #Read every filename in directory:
-    samplefiles = os.listdir(directory)
+    samplefiles = []
+    for root, directories, files in os.walk(directory, topdown=False):
+        for name in files:
+            if os.path.isfile(os.path.join(root, name)):
+                samplefiles.append(os.path.join(root, name))
+        for name in directories:
+            if os.path.isfile(os.path.join(root, name)):
+                samplefiles.append(os.path.join(root, name))
 
-    keyslist = []
+
+    keyslist = set([])
     ngramdictlist = []
+    isMalware = []
 
     for filename in samplefiles:
         #Read a file:
-        target = directory + filename
+        target = str(filename)
+        if target.find("malware") > 0:
+            isMalware.append(True)
+        else:
+            isMalware.append(False)
         samplebinary = readfile(target)
 
         #Split into n byte sections:
@@ -42,30 +53,34 @@ def extract_ngrams(directory = "sample/", n_size = 1, ngrams_possiblevalues = 0)
 
         #Add new keys to a list:
         for val in vector_ngram.keys():
-            if val not in keyslist:
-                keyslist.append(val)
+            keyslist.add(val)
         filecount += 1
         print(filecount, "files done.")
 
-        
+    print(isMalware)
     #Generate empty dictionary based on every occured ngram:
+    keyslist = list(keyslist)
     keyslist.sort()
     ngram_empty = {}
     for val in keyslist:
         ngram_empty[val] = 0
 
-
     #Update existing ngrams, put them into a final list
-
     ngrams_final = []
     for val in ngramdictlist:
         ngram_base = ngram_empty
         ngram_base.update(val)
-        print(list(ngram_base.values()), file=open("ngramsoutput.txt", "w"))
+        #print(list(ngram_base.values()), file = open("ngramoutput.txt", "a"))
         print(len(ngram_base))
+        ngrams_final.append(list(ngram_base.values()))
 
+    for i in range(len(ngrams_final)):
+        if(isMalware[i]):
+            print(ngrams_final[i], file = open("malware_" + str(n_size) + "grams.txt", "a"))
+        else:
+            print(ngrams_final[i], file = open("benign_" + str(n_size) +"grams.txt", "a"))
 
-
+    return keyslist
 
 def generate_possible_ngramvalues(n_size = 1):
     #Possible values of a byte:
@@ -93,10 +108,11 @@ def extract_header(filename):
 #------------MAIN FUNCTION:------------
 
 #Setting of n_size and target directory:
-n_size = 6
+n_size = 2
 target_directory = "sample/"
- 
-#Extraction of ngrams, give target directory, size of n, generated possible ngram values:
-extract_ngrams(target_directory, n_size, 0)
+keylist = 0 
 
+#Extraction of ngrams:
+keylist = extract_ngrams(target_directory, n_size)
 
+print(keylist)
