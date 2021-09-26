@@ -9,6 +9,23 @@ from itertools import product
 from collections import Counter
 from nltk.util import ngrams
 import numpy as np
+import pandas as pd
+
+import matplotlib.pyplot as plt
+from sklearn import datasets
+from sklearn.model_selection import train_test_split
+import warnings
+warnings.filterwarnings("ignore")
+import seaborn as sns
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+from numpy import mean
+from numpy import std
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import r2_score
 
 from elftools.elf.elffile import ELFFile
 
@@ -38,9 +55,9 @@ def extract_ngrams(directory = "sample/", n_size = 1):
         #Read a file:
         target = str(filename)
         if target.find("malware") > 0:
-            isMalware.append(True)
+            isMalware.append(1)
         else:
-            isMalware.append(False)
+            isMalware.append(0)
         samplebinary = readfile(target)
 
         #Split into n byte sections:
@@ -80,16 +97,17 @@ def extract_ngrams(directory = "sample/", n_size = 1):
     for i in range(len(ngrams_final)):
         if(isMalware[i]):
             filem.write(", ".join(map(str, ngrams_final[i])))
-            filem.write(str(int(isMalware[i])))
+            filem.write(str(isMalware[i]))
             filem.write("\n")
         else: 
             fileb.write(", ".join(map(str, ngrams_final[i])))
-            fileb.write(str(int(isMalware[i])))
+            fileb.write(str(isMalware[i]))
             fileb.write("\n")
     filem.close()
     fileb.close()
 
-    return keyslist
+    #return keyslist
+    return ngrams_final, isMalware
 
 def generate_possible_ngramvalues(n_size = 1):
     #Possible values of a byte:
@@ -117,10 +135,40 @@ def extract_header(filename):
 #------------MAIN FUNCTION:------------
 
 #Setting of n_size and target directory:
-n_size = 2
+n_size = 1
 target_directory = "sample/"
 keylist = 0 
 
 #Extraction of ngrams:
-keylist = extract_ngrams(target_directory, n_size)
-print(keylist)
+ngrams, isMal = extract_ngrams(target_directory, n_size)
+
+import random
+shuffler = list(zip(ngrams, isMal))
+random.shuffle(shuffler)
+ngrams, isMal = zip(*shuffler)
+
+dataset = pd.DataFrame(ngrams)
+print(dataset)
+
+datasetMB = pd.DataFrame(isMal)
+print(datasetMB)
+
+X, y = dataset, datasetMB
+
+kf = KFold(n_splits=10)
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix
+regressor = RandomForestClassifier(max_depth=2, random_state=0)
+for train_index, test_index in kf.split(X):
+
+    x_train, x_test = X.iloc[train_index], X.iloc[test_index]
+    y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+
+    regressor.fit(x_train,y_train)
+    prediction = regressor.predict(x_test)
+
+    print('TN/FP/FN/TP', confusion_matrix(y_test, prediction).ravel())
+    print('\n')
+
+
+
