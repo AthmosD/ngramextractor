@@ -74,11 +74,20 @@ def extract_ngrams(directory = "sample/", n_size = 1):
         print(len(ngram_base))
         ngrams_final.append(list(ngram_base.values()))
 
+
+    filem = open("malware_" + str(n_size) + "grams.txt", "w")
+    fileb = open("benign_" + str(n_size) +"grams.txt", "w")
     for i in range(len(ngrams_final)):
         if(isMalware[i]):
-            print(ngrams_final[i], file = open("malware_" + str(n_size) + "grams.txt", "a"))
-        else:
-            print(ngrams_final[i], file = open("benign_" + str(n_size) +"grams.txt", "a"))
+            filem.write(", ".join(map(str, ngrams_final[i])))
+            filem.write(str(int(isMalware[i])))
+            filem.write("\n")
+        else: 
+            fileb.write(", ".join(map(str, ngrams_final[i])))
+            fileb.write(str(int(isMalware[i])))
+            fileb.write("\n")
+    filem.close()
+    fileb.close()
 
     return keyslist
 
@@ -114,5 +123,4 @@ keylist = 0
 
 #Extraction of ngrams:
 keylist = extract_ngrams(target_directory, n_size)
-
 print(keylist)
