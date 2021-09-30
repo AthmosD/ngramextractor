@@ -29,6 +29,23 @@ from sklearn.metrics import r2_score
 
 from elftools.elf.elffile import ELFFile
 
+
+def elffilesorter():
+    filelist = os.listdir("benign_samples/ubiquiti/")
+    headerlist = []
+
+    targetlist = []
+    for val in filelist:
+        targetlist.append("benign_samples/ubiquiti/" + val)
+
+    for val in targetlist:
+        with open(val, 'rb') as f:
+            headerlist.append(dict(ELFFile(f).header))
+
+    for i in range (len(headerlist)):
+        if headerlist[i]["e_machine"] == "EM_ARM":
+            print(filelist[i], file = open("benign_arm_files.txt", "a"))
+
 def readfile(fname):
     with open(fname, "rb") as file:
         content = file.read()
@@ -91,7 +108,6 @@ def extract_ngrams(directory = "sample/", n_size = 1):
         print(len(ngram_base))
         ngrams_final.append(list(ngram_base.values()))
 
-
     filem = open("malware_" + str(n_size) + "grams.txt", "w")
     fileb = open("benign_" + str(n_size) +"grams.txt", "w")
     for i in range(len(ngrams_final)):
@@ -134,8 +150,9 @@ def extract_header(filename):
 
 #------------MAIN FUNCTION:------------
 
+
 #Setting of n_size and target directory:
-n_size = 1
+n_size = 4
 target_directory = "sample/"
 keylist = 0 
 
@@ -169,6 +186,5 @@ for train_index, test_index in kf.split(X):
 
     print('TN/FP/FN/TP', confusion_matrix(y_test, prediction).ravel())
     print('\n')
-
 
 
