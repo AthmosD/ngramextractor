@@ -26,17 +26,18 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
-
 from elftools.elf.elffile import ELFFile
-
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix
 
 def elffilesorter():
-    filelist = os.listdir("benign_samples/ubiquiti/")
+    target = "benign_samples/ubiquiti/"
+    filelist = os.listdir(target)
     headerlist = []
 
     targetlist = []
     for val in filelist:
-        targetlist.append("benign_samples/ubiquiti/" + val)
+        targetlist.append(target + val)
 
     for val in targetlist:
         with open(val, 'rb') as f:
@@ -54,19 +55,27 @@ def readfile(fname):
 def extract_ngrams(directory = "sample/", n_size = 1):
     filecount = 0
     #Read every filename in directory:
-    samplefiles = []
-    for root, directories, files in os.walk(directory, topdown=False):
-        for name in files:
-            if os.path.isfile(os.path.join(root, name)):
-                samplefiles.append(os.path.join(root, name))
-        for name in directories:
-            if os.path.isfile(os.path.join(root, name)):
-                samplefiles.append(os.path.join(root, name))
 
+    #TODO: BUILD RANDOMIZED FILESET WHERE M=B:
+    benign_directory = directory + "benign/"
+    malware_directory = directory + "malware/"
+
+    benign_filelist = os.listdir(benign_directory)
+    malware_filelist = os.listdir(malware_directory)
+
+    sample_size = int(min(len(benign_filelist),len(malware_filelist)))-990
+    
+    benign_files = random.sample(benign_filelist, sample_size)
+    malware_files = random.sample(malware_filelist, sample_size)
+
+    samplefiles = [benign_directory + s for s in benign_files] + [malware_directory + s for s in malware_files]
+    
+    del(benign_directory, malware_directory, benign_filelist, malware_filelist, sample_size)
 
     keyslist = set([])
     ngramdictlist = []
     isMalware = []
+    countersum = {}
 
     for filename in samplefiles:
         #Read a file:
@@ -82,41 +91,59 @@ def extract_ngrams(directory = "sample/", n_size = 1):
 
         #Count occurences of unique ngrams:
         vector_ngram = dict(Counter(ngramslist))
+        countersum =+ Counter(ngramslist)
         ngramdictlist.append(vector_ngram)
-        #print(vector_ngram)
 
         #Add new keys to a list:
         for val in vector_ngram.keys():
             keyslist.add(val)
         filecount += 1
-        print(filecount, "files done.")
+        print(filecount, "files extracted.")
 
-    print(isMalware)
+
+    emptyset = []
+    for val in countersum.keys():
+        emptyset.append(val)
+    emptyset.sort()
+
+    print(len(emptyset))
+    print(emptyset)
+
+
     #Generate empty dictionary based on every occured ngram:
     keyslist = list(keyslist)
     keyslist.sort()
+    print(len(keyslist))
     ngram_empty = {}
     for val in keyslist:
         ngram_empty[val] = 0
+    print("Empty dictionary generated:", len(ngram_empty), "values.")
+    input("Press ENTER to continue.")
 
     #Update existing ngrams, put them into a final list
     ngrams_final = []
+    filecount = 0
+
     for val in ngramdictlist:
         ngram_base = ngram_empty
         ngram_base.update(val)
-        #print(list(ngram_base.values()), file = open("ngramoutput.txt", "a"))
-        print(len(ngram_base))
         ngrams_final.append(list(ngram_base.values()))
+        filecount += 1
+        print(filecount, "ngrams updated and appended to final list. Ngram vector lenght:", len(list(ngram_base.values())))
+
+    print(ngramdictlist, file = open("ngramdictlist.txt","w"))
+    input("ENTER")
 
     filem = open("malware_" + str(n_size) + "grams.txt", "w")
-    fileb = open("benign_" + str(n_size) +"grams.txt", "w")
-    for i in range(len(ngrams_final)):
+    fileb = open("benign_" + str(n_size) + "grams.txt", "w")
+    filecount = 0
+    for i in range(len(ngramdictlist)):
         if(isMalware[i]):
-            filem.write(", ".join(map(str, ngrams_final[i])))
+            filem.write(", ".join(map(str, ngramdictlist[i])))
             filem.write(str(isMalware[i]))
             filem.write("\n")
         else: 
-            fileb.write(", ".join(map(str, ngrams_final[i])))
+            fileb.write(", ".join(map(str, ngramdictlist[i])))
             fileb.write(str(isMalware[i]))
             fileb.write("\n")
     filem.close()
@@ -153,11 +180,18 @@ def extract_header(filename):
 
 #Setting of n_size and target directory:
 n_size = 4
-target_directory = "sample/"
+target_directory = "sample/arm/"
 keylist = 0 
 
 #Extraction of ngrams:
 ngrams, isMal = extract_ngrams(target_directory, n_size)
+
+isMB=[]
+for i in range(len(ngrams)):
+    if i < len(ngrams)/2:
+        isMB.append(0)
+    else:
+        isMB.append(1)
 
 import random
 shuffler = list(zip(ngrams, isMal))
@@ -170,11 +204,12 @@ print(dataset)
 datasetMB = pd.DataFrame(isMal)
 print(datasetMB)
 
+input("ENTER")
+
 X, y = dataset, datasetMB
 
 kf = KFold(n_splits=10)
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import confusion_matrix
+
 regressor = RandomForestClassifier(max_depth=2, random_state=0)
 for train_index, test_index in kf.split(X):
 
